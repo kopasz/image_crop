@@ -18,6 +18,7 @@ class Crop extends StatefulWidget {
   final double aspectRatio;
   final double maximumScale;
   final bool alwaysShowGrid;
+  final bool fixedGrid;
   final ImageErrorListener onImageError;
 
   const Crop({
@@ -26,10 +27,12 @@ class Crop extends StatefulWidget {
     this.aspectRatio,
     this.maximumScale = 2.0,
     this.alwaysShowGrid = false,
+    this.fixedGrid = false,
     this.onImageError,
   })  : assert(image != null),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
+        assert(fixedGrid != null),
         super(key: key);
 
   Crop.file(
@@ -39,10 +42,12 @@ class Crop extends StatefulWidget {
     this.aspectRatio,
     this.maximumScale = 2.0,
     this.alwaysShowGrid = false,
+    this.fixedGrid = false,
     this.onImageError,
   })  : image = FileImage(file, scale: scale),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
+        assert(fixedGrid != null),
         super(key: key);
 
   Crop.asset(
@@ -53,10 +58,12 @@ class Crop extends StatefulWidget {
     this.aspectRatio,
     this.maximumScale = 2.0,
     this.alwaysShowGrid = false,
+    this.fixedGrid = false,
     this.onImageError,
   })  : image = AssetImage(assetName, bundle: bundle, package: package),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
+        assert(fixedGrid != null),
         super(key: key);
 
   @override
@@ -193,6 +200,7 @@ class CropState extends State<Crop> with TickerProviderStateMixin, Drag {
               area: _area,
               scale: _scale,
               active: _activeController.value,
+              fixedGrid: widget.fixedGrid,
             ),
           ),
         ),
@@ -218,9 +226,13 @@ class CropState extends State<Crop> with TickerProviderStateMixin, Drag {
     }
   }
 
-  Size get _boundaries =>
-      _surfaceKey.currentContext.size -
-      const Offset(_kCropHandleSize, _kCropHandleSize);
+  Size get _boundaries {
+    if (!widget.fixedGrid) {
+      return _surfaceKey.currentContext.size -
+          const Offset(_kCropHandleSize, _kCropHandleSize);
+    }
+    return _surfaceKey.currentContext.size;
+  }
 
   Offset _getLocalPoint(Offset point) {
     final RenderBox box = _surfaceKey.currentContext.findRenderObject();
@@ -305,6 +317,8 @@ class CropState extends State<Crop> with TickerProviderStateMixin, Drag {
   }
 
   _CropHandleSide _hitCropHandle(Offset localPoint) {
+    if (widget.fixedGrid) return _CropHandleSide.none;
+
     final boundaries = _boundaries;
     final viewRect = Rect.fromLTWH(
       _boundaries.width * _area.left,
@@ -560,6 +574,7 @@ class _CropPainter extends CustomPainter {
   final Rect area;
   final double scale;
   final double active;
+  final bool fixedGrid;
 
   _CropPainter({
     this.image,
@@ -568,6 +583,7 @@ class _CropPainter extends CustomPainter {
     this.area,
     this.scale,
     this.active,
+    this.fixedGrid,
   });
 
   @override
@@ -582,12 +598,18 @@ class _CropPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(
-      _kCropHandleSize / 2,
-      _kCropHandleSize / 2,
-      size.width - _kCropHandleSize,
-      size.height - _kCropHandleSize,
-    );
+    Rect rect;
+
+    if (fixedGrid) {
+      rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    } else {
+      rect = Rect.fromLTWH(
+        _kCropHandleSize / 2,
+        _kCropHandleSize / 2,
+        size.width - _kCropHandleSize,
+        size.height - _kCropHandleSize,
+      );
+    }
 
     canvas.save();
     canvas.translate(rect.left, rect.top);
@@ -639,7 +661,7 @@ class _CropPainter extends CustomPainter {
 
     if (!boundaries.isEmpty) {
       _drawGrid(canvas, boundaries);
-      _drawHandles(canvas, boundaries);
+      if (!fixedGrid) _drawHandles(canvas, boundaries);
     }
 
     canvas.restore();
