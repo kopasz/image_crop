@@ -3,8 +3,8 @@ part of image_crop;
 const _kCropGridColumnCount = 3;
 const _kCropGridRowCount = 3;
 const _kCropGridColor = Color.fromRGBO(0xd0, 0xd0, 0xd0, 0.9);
-const _kCropOverlayActiveOpacity = 0.3;
-const _kCropOverlayInactiveOpacity = 0.7;
+const _kCropOverlayActiveColor = Color.fromRGBO(0x0, 0x0, 0x0, 0.3);
+const _kCropOverlayInactiveColor = const Color.fromRGBO(0x0, 0x0, 0x0, 0.7);
 const _kCropHandleColor = Color.fromRGBO(0xd0, 0xd0, 0xd0, 1.0);
 const _kCropHandleSize = 10.0;
 const _kCropHandleHitSize = 48.0;
@@ -20,6 +20,9 @@ class Crop extends StatefulWidget {
   final bool alwaysShowGrid;
   final bool fixedGrid;
   final ImageErrorListener onImageError;
+  final Color gridColor;
+  final Color overlayActiveColor;
+  final Color overlayInactiveColor;
 
   const Crop({
     Key key,
@@ -28,11 +31,13 @@ class Crop extends StatefulWidget {
     this.maximumScale = 2.0,
     this.alwaysShowGrid = false,
     this.fixedGrid = false,
+    this.gridColor = _kCropGridColor,
+    this.overlayActiveColor = _kCropOverlayActiveColor,
+    this.overlayInactiveColor = _kCropOverlayInactiveColor,
     this.onImageError,
   })  : assert(image != null),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
-        assert(fixedGrid != null),
         super(key: key);
 
   Crop.file(
@@ -43,11 +48,13 @@ class Crop extends StatefulWidget {
     this.maximumScale = 2.0,
     this.alwaysShowGrid = false,
     this.fixedGrid = false,
+    this.gridColor = _kCropGridColor,
+    this.overlayActiveColor = _kCropOverlayActiveColor,
+    this.overlayInactiveColor = _kCropOverlayInactiveColor,
     this.onImageError,
   })  : image = FileImage(file, scale: scale),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
-        assert(fixedGrid != null),
         super(key: key);
 
   Crop.asset(
@@ -59,11 +66,13 @@ class Crop extends StatefulWidget {
     this.maximumScale = 2.0,
     this.alwaysShowGrid = false,
     this.fixedGrid = false,
+    this.gridColor = _kCropGridColor,
+    this.overlayActiveColor = _kCropOverlayActiveColor,
+    this.overlayInactiveColor = _kCropOverlayInactiveColor,
     this.onImageError,
   })  : image = AssetImage(assetName, bundle: bundle, package: package),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
-        assert(fixedGrid != null),
         super(key: key);
 
   @override
@@ -201,6 +210,9 @@ class CropState extends State<Crop> with TickerProviderStateMixin, Drag {
               scale: _scale,
               active: _activeController.value,
               fixedGrid: widget.fixedGrid,
+              gridColor: widget.gridColor,
+              overlayActiveColor: widget.overlayActiveColor,
+              overlayInactiveColor: widget.overlayInactiveColor,
             ),
           ),
         ),
@@ -575,6 +587,9 @@ class _CropPainter extends CustomPainter {
   final double scale;
   final double active;
   final bool fixedGrid;
+  final Color gridColor;
+  final Color overlayActiveColor;
+  final Color overlayInactiveColor;
 
   _CropPainter({
     this.image,
@@ -584,6 +599,9 @@ class _CropPainter extends CustomPainter {
     this.scale,
     this.active,
     this.fixedGrid,
+    this.gridColor,
+    this.overlayActiveColor,
+    this.overlayInactiveColor,
   });
 
   @override
@@ -636,12 +654,8 @@ class _CropPainter extends CustomPainter {
       canvas.restore();
     }
 
-    paint.color = Color.fromRGBO(
-        0x0,
-        0x0,
-        0x0,
-        _kCropOverlayActiveOpacity * active +
-            _kCropOverlayInactiveOpacity * (1.0 - active));
+    paint.color = Color.lerp(overlayInactiveColor, overlayActiveColor, active);
+
     final boundaries = Rect.fromLTWH(
       rect.width * area.left,
       rect.height * area.top,
@@ -718,7 +732,7 @@ class _CropPainter extends CustomPainter {
 
     final paint = Paint()
       ..isAntiAlias = false
-      ..color = _kCropGridColor.withOpacity(_kCropGridColor.opacity * active)
+      ..color = gridColor.withOpacity(gridColor.opacity * active)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
