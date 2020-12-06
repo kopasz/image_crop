@@ -23,6 +23,7 @@ class Crop extends StatefulWidget {
   final Color gridColor;
   final Color overlayActiveColor;
   final Color overlayInactiveColor;
+  final void Function(CropState) onScaleEnd;
 
   const Crop({
     Key key,
@@ -35,6 +36,7 @@ class Crop extends StatefulWidget {
     this.overlayActiveColor = _kCropOverlayActiveColor,
     this.overlayInactiveColor = _kCropOverlayInactiveColor,
     this.onImageError,
+    this.onScaleEnd,
   })  : assert(image != null),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
@@ -52,6 +54,7 @@ class Crop extends StatefulWidget {
     this.overlayActiveColor = _kCropOverlayActiveColor,
     this.overlayInactiveColor = _kCropOverlayInactiveColor,
     this.onImageError,
+    this.onScaleEnd,
   })  : image = FileImage(file, scale: scale),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
@@ -70,6 +73,7 @@ class Crop extends StatefulWidget {
     this.overlayActiveColor = _kCropOverlayActiveColor,
     this.overlayInactiveColor = _kCropOverlayInactiveColor,
     this.onImageError,
+    this.onScaleEnd,
   })  : image = AssetImage(assetName, bundle: bundle, package: package),
         assert(maximumScale != null),
         assert(alwaysShowGrid != null),
@@ -437,6 +441,8 @@ class CropState extends State<Crop> with TickerProviderStateMixin, Drag {
       curve: Curves.fastOutSlowIn,
       duration: const Duration(milliseconds: 350),
     );
+
+    if (widget.onScaleEnd != null) widget.onScaleEnd(this);
   }
 
   void _updateArea(
