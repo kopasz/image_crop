@@ -106,17 +106,18 @@ class CropState extends State<Crop> with TickerProviderStateMixin, Drag {
   Tween<double> _scaleTween;
   ImageStreamListener _imageListener;
 
-  double get scale => _area.shortestSide / _scale;
+  double get scale =>
+      _area.shortestSide / _scale.clamp(_minimumScale, _maximumScale);
 
   Rect get area {
-    return _view.isEmpty
-        ? null
-        : Rect.fromLTWH(
-            _area.left * _view.width / _scale - _view.left,
-            _area.top * _view.height / _scale - _view.top,
-            _area.width * _view.width / _scale,
-            _area.height * _view.height / _scale,
-          );
+    final clampedScale = _scale.clamp(_minimumScale, _maximumScale);
+    Rect boundaryView = _getViewInBoundaries(clampedScale);
+    return Rect.fromLTWH(
+      _area.left * boundaryView.width / clampedScale - boundaryView.left,
+      _area.top * boundaryView.height / clampedScale - boundaryView.top,
+      _area.width * boundaryView.width / clampedScale,
+      _area.height * boundaryView.height / clampedScale,
+    );
   }
 
   bool get _isEnabled => !_view.isEmpty && _image != null;
